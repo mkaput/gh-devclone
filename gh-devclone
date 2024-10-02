@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import subprocess
+
+
+# Source: https://stackoverflow.com/a/10551190
+class EnvDefault(argparse.Action):
+    def __init__(self, envvar, required=True, default=None, **kwargs):
+        if envvar:
+            if envvar in os.environ:
+                default = os.environ[envvar]
+        if required and default:
+            required = False
+        super(EnvDefault, self).__init__(default=default, required=required,
+                                         **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+
+
+argparser = argparse.ArgumentParser(
+    description="Clone a GitHub repository to local development directory, "
+                "preserving the `OWNER/REPO` directory structure. "
+                "If the `OWNER/` portion of the `OWNER/REPO` repository argument is omitted, "
+                "it defaults to the name of the authenticating user. "
+                "This command is a thin wrapper over `gh repo clone`."
+)
+argparser.add_argument("repository", help="the repository to clone")
+argparser.add_argument("--root",
+                       action=EnvDefault,
+                       envvar="GH_DEVCLONE_ROOT",
+                       default="~/Developer",
+                       help="the root directory to clone repositories into "
+                            "[env: GH_DEVCLONE_ROOT=] [default: %(default)s]")
+
+
+def main():
+    try:
+        args = argparser.parse_args()
+        repository = args.repository
+        root = os.path.expanduser(args.root)
+
+        # Call `gh repo view --json nameWithOwner` to get full owner/repo name.
+        name_with_owner_json = subprocess.check_output(["gh", "repo", "view", "--json", "nameWithOwner", repository])
+        name_with_owner = json.loads(name_with_owner_json)["nameWithOwner"]
+
+        dest = os.path.join(root, name_with_owner)
+        os.makedirs(dest, exist_ok=True)
+
+        subprocess.check_call(["gh", "repo", "clone", repository, dest])
+    except subprocess.CalledProcessError as e:
+        exit(e.returncode)
+
+
+if __name__ == "__main__":
+    main()
