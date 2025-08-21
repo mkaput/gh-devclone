@@ -14,27 +14,41 @@ class EnvDefault(argparse.Action):
                 default = os.environ[envvar]
         if required and default:
             required = False
-        super(EnvDefault, self).__init__(default=default, required=required,
-                                         **kwargs)
+        super(EnvDefault, self).__init__(default=default, required=required, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
 
 
 argparser = argparse.ArgumentParser(
-    description="Clone a GitHub repository to local development directory, "
-                "preserving the `OWNER/REPO` directory structure. "
-                "If the `OWNER/` portion of the `OWNER/REPO` repository argument is omitted, "
-                "it defaults to the name of the authenticating user. "
-                "This command is a thin wrapper over `gh repo clone`."
+    description="""
+    Clone a GitHub repository to local development directory,
+    preserving the `OWNER/REPO` directory structure.
+    If the `OWNER/` portion of the `OWNER/REPO` repository argument is omitted,
+    it defaults to the name of the authenticating user.
+    This command is a thin wrapper over `gh repo clone`.
+    """
 )
 argparser.add_argument("repository", help="the repository to clone")
-argparser.add_argument("--root",
-                       action=EnvDefault,
-                       envvar="GH_DEVCLONE_ROOT",
-                       default="~/Developer",
-                       help="the root directory to clone repositories into "
-                            "[env: GH_DEVCLONE_ROOT=] [default: %(default)s]")
+argparser.add_argument(
+    "--root",
+    action=EnvDefault,
+    envvar="GH_DEVCLONE_ROOT",
+    default="~/Developer",
+    help="the root directory to clone repositories into [env: GH_DEVCLONE_ROOT=] [default: %(default)s]",
+)
+argparser.add_argument(
+    "--open",
+    action="store_true",
+    help="open the project in an editor after clone",
+)
+argparser.add_argument(
+    "--editor",
+    action=EnvDefault,
+    envvar="GH_DEVCLONE_EDITOR",
+    default="idea",
+    help="editor command to open the project [env: GH_DEVCLONE_EDITOR=] [default: %(default)s]",
+)
 
 
 def main():
@@ -43,14 +57,20 @@ def main():
         repository = args.repository
         root = os.path.expanduser(args.root)
 
-        # Call `gh repo view --json nameWithOwner` to get full owner/repo name.
-        name_with_owner_json = subprocess.check_output(["gh", "repo", "view", "--json", "nameWithOwner", repository])
+        # Call `gh repo view --json nameWithOwner` to get the full owner /repo name.
+        name_with_owner_json = subprocess.check_output(
+            ["gh", "repo", "view", "--json", "nameWithOwner", repository]
+        )
         name_with_owner = json.loads(name_with_owner_json)["nameWithOwner"]
 
         dest = os.path.join(root, name_with_owner)
         os.makedirs(dest, exist_ok=True)
 
         subprocess.check_call(["gh", "repo", "clone", repository, dest])
+
+        # If --open flag is provided, open the project in the editor.
+        if args.open:
+            subprocess.check_call([args.editor, dest])
     except subprocess.CalledProcessError as e:
         exit(e.returncode)
 

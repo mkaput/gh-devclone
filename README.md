@@ -29,3 +29,19 @@ gh devclone OWNER/REPO --root ~/Projects
 
 If the `OWNER/` portion of the `OWNER/REPO` repository argument is omitted,
 it defaults to the name of the authenticating user.
+
+Pass `--open` to open the project after cloning. 
+The editor command can be configured via `--editor COMMAND` or the `GH_DEVCLONE_EDITOR` environment variable. 
+The default editor is `idea`.
+
+```bash
+# --open is a simple flag; it can appear before or after OWNER/REPO
+gh devclone --open OWNER/REPO
+gh devclone OWNER/REPO --open
+
+# Choose editor via environment variable
+GH_DEVCLONE_EDITOR=cat gh devclone --open OWNER/REPO
+
+# Choose editor via CLI option
+gh devclone --open --editor cat OWNER/REPO
+```
