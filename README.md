@@ -32,7 +32,7 @@ it defaults to the name of the authenticating user.
 
 Pass `--open` to open the project after cloning. 
 The editor command can be configured via `--editor COMMAND` or the `GH_DEVCLONE_EDITOR` environment variable. 
-The default editor is `idea`.
+The default editor is `zed`.
 
 ```bash
 # --open is a simple flag; it can appear before or after OWNER/REPO
