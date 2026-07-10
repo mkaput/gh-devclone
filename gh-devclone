@@ -46,7 +46,7 @@ argparser.add_argument(
     "--editor",
     action=EnvDefault,
     envvar="GH_DEVCLONE_EDITOR",
-    default="idea",
+    default="zed",
     help="editor command to open the project [env: GH_DEVCLONE_EDITOR=] [default: %(default)s]",
 )
 
